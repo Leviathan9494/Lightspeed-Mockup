@@ -1,0 +1,40 @@
+
+# Ignore node_modules and build output
+node_modules/
+*.log
+.DS_Store
+.env
+/dist/
+/.next/
+/.turbo/
+/frontend/node_modules/
+/backend/node_modules/
+/shared/node_modules/
+/frontend/.next/
+/frontend/.turbo/
+/backend/dist/
+/frontend/dist/
+/shared/dist/
+# Ignore bun and lock files
+bun.lockb
+bun.lock
+# Ignore OS files
+Thumbs.db
+# Ignore IDE files
+.vscode/
+.idea/
+# Ignore test coverage
+coverage/
+# Ignore build artifacts
+*.out
+*.exe
+*.dll
+*.so
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+# Ignore misc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

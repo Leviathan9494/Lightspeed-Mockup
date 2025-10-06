@@ -1,0 +1,22 @@
+{
+  "name": "lightspeed-mockapp",
+  "version": "1.0.0",
+  "description": "Lightspeed mockapp with login functionality and inventory management",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd frontend && bun dev",
+    "dev:backend": "cd backend && bun run index.ts",
+    "build": "cd frontend && bun run build",
+    "start": "cd frontend && bun start",
+    "lint": "cd frontend && bun run lint"
+  },
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
