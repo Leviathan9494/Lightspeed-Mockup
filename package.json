@@ -4,8 +4,10 @@
   "description": "Lightspeed mockapp with login functionality and inventory management",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev": "concurrently \"bun run dev:frontend-fixed\" \"bun run dev:backend\"",
     "dev:frontend": "cd frontend && bun dev",
+    "free-frontend-port": "kill-port 3000 || exit 0",
+    "dev:frontend-fixed": "bun run free-frontend-port && cross-env PORT=3000 bun run dev:frontend",
     "dev:backend": "cd backend && bun run index.ts",
     "build": "cd frontend && bun run build",
     "start": "cd frontend && bun start",
@@ -17,6 +19,8 @@
     "shared"
   ],
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "kill-port": "^2.0.1"
   }
 }

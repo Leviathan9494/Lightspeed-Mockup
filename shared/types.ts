@@ -39,11 +39,30 @@ export interface Product {
   price: number;
   stock: number;
   category: string;
+  subcategory?: string;
 }
 
 export interface InventoryResponse {
   success: boolean;
   data?: Product[];
+  meta?: {
+    total: number;
+    page: number;
+    pageSize: number;
+    returned: number;
+  };
+  message?: string;
+}
+
+export interface CategoryNode {
+  id: string;
+  name: string;
+  subcategories?: { id: string; name: string }[];
+}
+
+export interface CategoriesResponse {
+  success: boolean;
+  data?: CategoryNode[];
   message?: string;
 }
 

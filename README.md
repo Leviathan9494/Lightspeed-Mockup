@@ -4,11 +4,17 @@ A modern inventory management system mockup built with Next.js and Bun.
 
 ## Features
 
-- 🔐 **Authentication System** - Secure login to access inventory
-- 📊 **Inventory Management** - View and manage product inventory
-- 🎨 **Modern UI** - Built with Shadcn UI components
-- 🚀 **Fast Backend** - Powered by Bun HTTP server
-- 📱 **Responsive Design** - Works on desktop and mobile devices
+- 🔐 **Authentication System** – Mock username/password + occasional PIN challenge
+- 📊 **Inventory Management** – 50 in‑memory products across multiple categories
+- 🗂️ **Category & Subcategory Filtering** – Hierarchical picker with graceful fallback
+- 🔍 **Debounced Search** – Name / SKU / category / subcategory
+- 🔢 **Server Pagination & Counts** – page + pageSize + meta block
+- 🧮 **Count Endpoint** – Rapid verification of total vs filtered
+- 🪵 **Structured Debug Logging** – Logs dataset & filtered sizes per request
+- 🧪 **Integration Test Script** – Quick endpoint sanity checks
+- 🎨 **Modern UI** – Shadcn UI + Tailwind CSS
+- 🚀 **Fast Backend** – Bun HTTP server (TypeScript)
+- 📱 **Responsive Design** – Desktop & mobile
 
 ## Project Structure
 
@@ -96,8 +102,15 @@ bun dev
 ### Authentication
 - `POST /api/auth/login` - User login
 
+### Categories
+- `GET /api/categories` – Nested category + subcategory list
+
 ### Inventory
-- `GET /api/inventory` - Get all inventory items
+- `GET /api/inventory` – Query inventory
+   - Query params: `search`, `category`, `subcategory`, `page` (default 1), `pageSize` (default 25, max 100)
+   - Returns: `{ success, data: Product[], meta: { total, page, pageSize, returned } }`
+- `GET /api/inventory/count` – Returns overall dataset size & filtered size
+   - Returns: `{ success, total, filtered }`
 
 ## Development Guidelines
 
@@ -117,10 +130,12 @@ bun dev
 - Responsive login interface
 
 ### Inventory Management
-- Product listing with search and filtering
-- Stock status indicators (In Stock, Low Stock, Out of Stock)
-- Responsive data table
-- Real-time inventory updates
+- 50-item mock dataset (Cannabis / Accessories / Apparel)
+- Category + subcategory picker modal
+- Debounced server-side search & filtering
+- Count summary (e.g. `Filtered: 12 / 50 items`)
+- Pagination controls + adjustable page size (5–100)
+- Stock status badges (In Stock / Low Stock / Out of Stock)
 
 ### UI/UX
 - Modern gradient backgrounds
@@ -131,14 +146,15 @@ bun dev
 
 ## Future Enhancements
 
-- [ ] Add product creation/editing functionality
-- [ ] Implement search and filtering
-- [ ] Add pagination for large inventories
-- [ ] Include product images
-- [ ] Add inventory analytics dashboard
-- [ ] Implement role-based access control
-- [ ] Add real database integration
-- [ ] Include unit tests and E2E testing
+- [ ] Persist products (database integration)
+- [ ] Product create / edit / delete UI
+- [ ] Role-based access control
+- [ ] Product images & media gallery
+- [ ] Analytics dashboard & low-stock alerts
+- [ ] CSV import validation & progress feedback
+- [ ] Caching & performance tuning
+- [ ] Authentication hardening (refresh tokens, reset flows)
+- [ ] Full test suite (unit + E2E)
 
 ## Contributing
 

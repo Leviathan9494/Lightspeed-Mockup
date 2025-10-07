@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,6 +26,13 @@ interface Product {
   price: number;
   stock: number;
   category: string;
+  subcategory?: string;
+}
+
+interface CategoryNode {
+  id: string;
+  name: string;
+  subcategories?: { id: string; name: string }[];
 }
 
 interface InventoryTab {
@@ -46,22 +53,84 @@ const inventoryTabs: InventoryTab[] = [
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [meta, setMeta] = useState<{ total: number; page: number; pageSize: number; returned: number } | null>(null);
   const [activeTab, setActiveTab] = useState('item-search');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<CategoryNode[]>([]);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryNode | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<{ id: string; name: string } | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoriesError, setCategoriesError] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [countLoading, setCountLoading] = useState(false);
+  const [totalAll, setTotalAll] = useState<number | null>(null); // dataset total
+  const [totalFiltered, setTotalFiltered] = useState<number | null>(null); // filtered total
+
+  // Fallback static categories in case backend categories endpoint is unreachable
+  const fallbackCategories: CategoryNode[] = [
+    { id: 'cannabis', name: 'Cannabis', subcategories: [
+      { id: 'pre-rolled', name: 'Pre-Rolled' },
+      { id: 'flower', name: 'Flower' },
+      { id: 'edibles', name: 'Edibles' },
+      { id: 'concentrates', name: 'Concentrates' },
+    ] },
+    { id: 'accessories', name: 'Accessories', subcategories: [
+      { id: 'pipes', name: 'Pipes' },
+      { id: 'papers', name: 'Papers' },
+      { id: 'grinders', name: 'Grinders' },
+    ] },
+    { id: 'apparel', name: 'Apparel', subcategories: [
+      { id: 'shirts', name: 'Shirts' },
+      { id: 'hats', name: 'Hats' },
+    ] },
+  ];
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     fetchInventory();
-  }, []);
+    fetchCounts();
+  }, [debouncedQuery, selectedCategory?.id, selectedSubcategory?.id, page, pageSize]);
 
-  const fetchInventory = async () => {
+  // Reset to first page when filters/search change (but not when only page changes)
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery, selectedCategory?.id, selectedSubcategory?.id]);
+
+  const buildParams = () => {
+    const params = new URLSearchParams();
+    if (debouncedQuery) params.set('search', debouncedQuery);
+    if (selectedCategory) params.set('category', selectedCategory.name); // backend expects full name
+    if (selectedSubcategory) params.set('subcategory', selectedSubcategory.name);
+    return params;
+  };
+
+  const fetchInventory = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/inventory');
+      setIsLoading(true);
+      const params = buildParams();
+      params.set('page', String(page));
+      params.set('pageSize', String(pageSize));
+      const response = await fetch(`http://localhost:3001/api/inventory?${params.toString()}`);
       const data = await response.json();
 
       if (data.success) {
         setProducts(data.data);
+        setMeta(data.meta || null);
+        setError('');
       } else {
         setError(data.message || 'Failed to load inventory');
       }
@@ -69,6 +138,49 @@ export default function InventoryPage() {
       setError('Connection error. Please ensure the backend server is running.');
     } finally {
       setIsLoading(false);
+    }
+  }, [debouncedQuery, selectedCategory, selectedSubcategory, page, pageSize]);
+
+  const fetchCounts = useCallback(async () => {
+    try {
+      setCountLoading(true);
+      const params = buildParams();
+      const res = await fetch(`http://localhost:3001/api/inventory/count?${params.toString()}`);
+      if (!res.ok) throw new Error('bad status');
+      const data = await res.json();
+      if (data.success) {
+        setTotalAll(data.total);
+        setTotalFiltered(data.filtered);
+      }
+    } catch (e) {
+      console.warn('[inventory] count fetch failed', e);
+    } finally {
+      setCountLoading(false);
+    }
+  }, [debouncedQuery, selectedCategory, selectedSubcategory]);
+
+  const fetchCategories = async () => {
+    setCategoriesLoading(true);
+    setCategoriesError('');
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch('http://localhost:3001/api/categories', { signal: controller.signal });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error('Bad status');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data) && data.data.length) {
+        setCategories(data.data);
+      } else {
+        setCategories(fallbackCategories);
+        setCategoriesError('Using fallback categories');
+      }
+    } catch (err) {
+      setCategories(fallbackCategories);
+      setCategoriesError('Could not load live categories. Showing fallback list.');
+      console.warn('[CategoryPicker] Falling back to static categories', err);
+    } finally {
+      setCategoriesLoading(false);
     }
   };
 
@@ -78,11 +190,28 @@ export default function InventoryPage() {
     return { label: 'In Stock', variant: 'default' as const };
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Server now handles filtering; we keep products as-is (optional client fallback could be reintroduced if needed)
+
+  const categoryPathLabel = selectedCategory
+    ? selectedSubcategory
+      ? `${selectedCategory.name}/${selectedSubcategory.name}`
+      : selectedCategory.name
+    : '+All';
+
+  const clearCategory = () => {
+    setSelectedCategory(null);
+    setSelectedSubcategory(null);
+  };
+
+  const handleSelectCategory = (cat: CategoryNode) => {
+    setSelectedCategory(cat);
+    setSelectedSubcategory(null);
+  };
+
+  const handleSelectSubcategory = (sub: { id: string; name: string }) => {
+    setSelectedSubcategory(sub);
+    setCategoryModalOpen(false);
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -101,15 +230,21 @@ export default function InventoryPage() {
                   />
                 </div>
               </div>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                Filters
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex items-center gap-2" onClick={() => setCategoryModalOpen(true)}>
+                  <Filter className="h-4 w-4" />
+                  <span>{categoryPathLabel}</span>
+                </Button>
+                {(selectedCategory || selectedSubcategory) && (
+                  <Button variant="ghost" onClick={clearCategory}>Reset</Button>
+                )}
+              </div>
             </div>
 
             {error ? (
               <div className="text-red-500 text-center py-4">{error}</div>
             ) : (
+              <>
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -124,7 +259,7 @@ export default function InventoryPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredProducts.map((product) => {
+                    {products.map((product) => {
                       const stockStatus = getStockStatus(product.stock);
                       return (
                         <TableRow key={product.id}>
@@ -132,7 +267,7 @@ export default function InventoryPage() {
                             {product.name}
                           </TableCell>
                           <TableCell className="font-mono text-sm">{product.sku}</TableCell>
-                          <TableCell>{product.category}</TableCell>
+                          <TableCell>{product.category}{product.subcategory ? `/${product.subcategory}` : ''}</TableCell>
                           <TableCell>${product.price.toFixed(2)}</TableCell>
                           <TableCell>{product.stock}</TableCell>
                           <TableCell>
@@ -152,6 +287,60 @@ export default function InventoryPage() {
                   </TableBody>
                 </Table>
               </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4">
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div>
+                    {countLoading ? 'Counting items…' : (
+                      totalAll !== null && totalFiltered !== null ? (
+                        selectedCategory || selectedSubcategory || debouncedQuery ? `Filtered: ${totalFiltered} / ${totalAll} items` : `Total: ${totalAll} items`
+                      ) : ' '
+                    )}
+                  </div>
+                  {meta && (
+                    <div className="text-xs text-gray-500">Page {meta.page} · Showing {meta.returned} of {meta.total} filtered</div>
+                  )}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                  <div className="flex items-center gap-2 text-sm">
+                    <label htmlFor="pageSize" className="text-gray-500">Rows:</label>
+                    <select
+                      id="pageSize"
+                      className="border rounded px-2 py-1 text-sm"
+                      value={pageSize}
+                      onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1 || isLoading}
+                    >Prev</Button>
+                    <span className="text-xs text-gray-500 w-16 text-center">{page}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (meta) {
+                          const maxPage = Math.ceil(meta.total / meta.pageSize);
+                          if (page < maxPage) setPage(p => p + 1);
+                        } else {
+                          setPage(p => p + 1); // fallback
+                        }
+                      }}
+                      disabled={isLoading || (meta ? page >= Math.ceil(meta.total / meta.pageSize) : false)}
+                    >Next</Button>
+                  </div>
+                </div>
+              </div>
+              </>
             )}
           </div>
         );
@@ -350,6 +539,56 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-6">
+      {categoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full grid md:grid-cols-2 gap-6 p-6 relative">
+            <button
+              onClick={() => setCategoryModalOpen(false)}
+              className="absolute top-2 right-2 text-sm text-gray-500 hover:text-gray-700"
+              aria-label="Close category selector"
+            >✕</button>
+            <div className="space-y-3 overflow-y-auto max-h-[60vh]">
+              <h3 className="font-semibold text-sm tracking-wide">Categories</h3>
+              {categoriesLoading && <div className="text-xs text-gray-500">Loading categories...</div>}
+              {categoriesError && <div className="text-xs text-amber-600">{categoriesError}</div>}
+              <ul className="space-y-1 text-sm">
+                {categories.map(cat => (
+                  <li key={cat.id} className="flex items-center justify-between gap-2 border rounded-md px-3 py-2">
+                    <span>{cat.name}</span>
+                    <Button size="sm" variant={selectedCategory?.id === cat.id ? 'default' : 'secondary'} onClick={() => handleSelectCategory(cat)}>Select</Button>
+                  </li>
+                ))}
+                {!categoriesLoading && categories.length === 0 && (
+                  <li className="text-xs text-gray-500 px-2">No categories available</li>
+                )}
+              </ul>
+            </div>
+            <div className="space-y-3 overflow-y-auto max-h-[60vh]">
+              <h3 className="font-semibold text-sm tracking-wide">Subcategories</h3>
+              {selectedCategory ? (
+                <ul className="space-y-1 text-sm">
+                  {selectedCategory.subcategories && selectedCategory.subcategories.length > 0 ? (
+                    selectedCategory.subcategories.map(sub => (
+                      <li key={sub.id} className="flex items-center justify-between gap-2 border rounded-md px-3 py-2">
+                        <span>{sub.name}</span>
+                        <Button size="sm" variant={selectedSubcategory?.id === sub.id ? 'default' : 'secondary'} onClick={() => handleSelectSubcategory(sub)}>Select</Button>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-xs text-gray-500 px-2">No subcategories</li>
+                  )}
+                </ul>
+              ) : (
+                <div className="text-xs text-gray-500">Select a category to view subcategories</div>
+              )}
+            </div>
+            <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t">
+              <Button variant="outline" onClick={() => { setSelectedCategory(null); setSelectedSubcategory(null); }}>Clear</Button>
+              <Button onClick={() => setCategoryModalOpen(false)}>Done</Button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8 overflow-x-auto">
