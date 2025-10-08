@@ -182,46 +182,44 @@ export default function InventoryItemSearchPage() {
         </div>
       </div>
 
-      {/* Result summary + pagination redesigned */}
-      <div className="text-xs bg-white border border-gray-300 shadow-sm divide-y">
-        <div className="flex flex-wrap items-center gap-4 px-3 py-2">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{totalFiltered ?? totalAll ?? total} Local Items Found</span>
-            <span className="text-gray-400">|</span>
-            <span className="text-gray-500">NuORDER Catalog Matches</span>
-            <span className="text-gray-400">(0)</span>
-          </div>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="flex items-stretch rounded-sm overflow-hidden border border-gray-300">
-              <button onClick={handlePrev} disabled={page === 1 || isLoading} className="px-2 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">◀</button>
-              <span className="px-3 py-1 bg-blue-600 text-white font-medium tracking-wide">{pageRangeStart}-{pageRangeEnd}</span>
-              <button onClick={handleNext} disabled={page >= maxPage || isLoading} className="px-2 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">▶</button>
-              {maxPage > 2 && <span className="px-2 py-1 text-gray-500">…</span>}
-              {total > effectivePageSize && (
-                <span className="px-3 py-1 bg-gray-50 border-l border-gray-300">{Math.max(1, (Math.floor((total - 1) / effectivePageSize) * effectivePageSize) + 1)}-{total}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-1 border border-gray-300 rounded-sm h-8 pl-2 pr-1 bg-gray-50">
-              <label className="text-gray-600">PER PAGE</label>
-              <select className="bg-transparent h-full text-xs outline-none" value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}>
-                {[25,50,100].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div className="text-gray-500 hidden sm:block">Page {page} of {maxPage}</div>
-            <div className="text-gray-500">{countLoading ? 'Counting…' : (totalFiltered !== null && totalAll !== null ? `${totalFiltered}/${totalAll}` : '')}</div>
-            <div className="flex gap-2">
-              <Button variant="outline" className="h-8 px-3 text-xs flex items-center gap-1"><Printer className="h-3 w-3" /> Print</Button>
-              <Button variant="outline" className="h-8 px-3 text-xs flex items-center gap-1"><Upload className="h-3 w-3" /> Export</Button>
-            </div>
-          </div>
+      {/* Result summary bar */}
+      <div className="flex items-center gap-3 text-xs bg-white border border-gray-300 shadow-sm px-3 py-2">
+        <span className="font-medium">{totalFiltered ?? totalAll ?? total} Local Items Found</span>
+        <span className="text-gray-400">|</span>
+        <span className="text-gray-500">NuORDER Catalog Matches</span>
+        <span className="text-gray-400">(0)</span>
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" className="h-7 px-3 text-[11px] flex items-center gap-1"><Printer className="h-3 w-3" /> Print</Button>
+          <Button variant="outline" className="h-7 px-3 text-[11px] flex items-center gap-1"><Upload className="h-3 w-3" /> Export</Button>
         </div>
+      </div>
+
+      {/* Pagination / per-page bar directly above table */}
+      <div className="flex flex-wrap items-center gap-4 text-[11px] bg-white border border-t-0 border-gray-300 shadow-sm px-3 py-1.5">
+        <div className="flex items-stretch rounded-sm overflow-hidden border border-gray-300 h-7">
+          <button onClick={handlePrev} disabled={page === 1 || isLoading} className="px-2 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">◀</button>
+          <span className="px-3 flex items-center bg-blue-600 text-white font-medium tracking-wide">{pageRangeStart}-{pageRangeEnd}</span>
+          <button onClick={handleNext} disabled={page >= maxPage || isLoading} className="px-2 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">▶</button>
+          {maxPage > 2 && <span className="px-2 flex items-center text-gray-500">…</span>}
+          {total > effectivePageSize && (
+            <span className="px-3 flex items-center bg-gray-50 border-l border-gray-300">{Math.max(1, (Math.floor((total - 1) / effectivePageSize) * effectivePageSize) + 1)}-{total}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 h-7 pl-2 pr-1 border border-gray-300 rounded-sm bg-gray-50">
+          <label className="text-gray-600">PER PAGE</label>
+          <select className="bg-transparent h-full outline-none" value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}>
+            {[25,50,100].map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <div className="text-gray-500">Page {page} of {maxPage}</div>
+        <div className="text-gray-500">{countLoading ? 'Counting…' : (totalFiltered !== null && totalAll !== null ? `${totalFiltered}/${totalAll}` : '')}</div>
       </div>
 
       <div className="border border-gray-300 bg-white overflow-x-auto">
         <Table className="text-sm">
           <TableHeader>
             <TableRow className="bg-gray-50 text-[11px] uppercase tracking-wide">
-              <TableHead className="w-[28rem]">Item</TableHead>
+              <TableHead className="w-[20rem]">Item</TableHead>
               <TableHead className="w-12">Qty.</TableHead>
               <TableHead className="w-20">Price</TableHead>
               <TableHead className="w-10">Tax</TableHead>
