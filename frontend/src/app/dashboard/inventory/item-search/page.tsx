@@ -241,7 +241,12 @@ export default function InventoryItemSearchPage() {
                 </TableCell>
                 <TableCell className="tabular-nums text-center">{r.qty}</TableCell>
                 <TableCell className="tabular-nums">
-                  <span className="inline-block px-2 py-0.5 border border-gray-300 rounded-sm bg-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.4)]">${r.price.toFixed(2)}</span>
+                  <span
+                    className="inline-flex items-center justify-center border border-gray-300 rounded-sm bg-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.4)] font-medium tracking-tight"
+                    style={{ width: '70px', height: '28px' }}
+                  >
+                    ${r.price.toFixed(2)}
+                  </span>
                 </TableCell>
                 <TableCell className="text-center">{r.tax && <input type="checkbox" checked readOnly className="h-3 w-3" />}</TableCell>
                 <TableCell>{r.category}</TableCell>
