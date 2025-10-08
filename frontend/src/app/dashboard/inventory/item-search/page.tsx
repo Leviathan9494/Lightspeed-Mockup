@@ -59,7 +59,7 @@ export default function InventoryItemSearchPage() {
   const total = meta?.total ?? rows.length;
   const effectivePageSize = meta?.pageSize ?? pageSize;
   const maxPage = Math.max(1, Math.ceil(total / effectivePageSize));
-  const compactInputClass = "h-8 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white";
+  const compactInputClass = "h-8 px-2 text-[13px] border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white";
   const compactSelectClass = compactInputClass + " pr-6";
   const handlePrev = () => setPage(p => Math.max(1, p - 1));
   const handleNext = () => setPage(p => (p < maxPage ? p + 1 : p));
@@ -216,17 +216,17 @@ export default function InventoryItemSearchPage() {
       </div>
 
       <div className="border border-gray-300 bg-white overflow-x-auto">
-        <Table className="text-sm">
+        <Table className="text-[13px] leading-tight">
           <TableHeader>
-            <TableRow className="bg-gray-50 text-[11px] uppercase tracking-wide">
-              <TableHead className="w-[20rem]">Item</TableHead>
-              <TableHead className="w-12">Qty.</TableHead>
-              <TableHead className="w-20">Price</TableHead>
-              <TableHead className="w-10">Tax</TableHead>
-              <TableHead className="w-56">Category</TableHead>
-              <TableHead className="w-40">Custom SKU</TableHead>
-              <TableHead className="w-40">MFR SKU</TableHead>
-              <TableHead className="w-28">Publish</TableHead>
+            <TableRow className="bg-gray-50 text-[12px] uppercase tracking-wide">
+              <TableHead className="w-[20rem] font-semibold">Item</TableHead>
+              <TableHead className="w-12 font-semibold">Qty.</TableHead>
+              <TableHead className="w-20 font-semibold">Price</TableHead>
+              <TableHead className="w-10 font-semibold">Tax</TableHead>
+              <TableHead className="w-56 font-semibold">Category</TableHead>
+              <TableHead className="w-40 font-semibold">Custom SKU</TableHead>
+              <TableHead className="w-40 font-semibold">MFR SKU</TableHead>
+              <TableHead className="w-28 font-semibold">Publish</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -235,12 +235,12 @@ export default function InventoryItemSearchPage() {
             {!isLoading && rows.length === 0 && !error && <TableRow><TableCell colSpan={8} className="text-center py-8 text-xs text-gray-500">No items match your search/filters.</TableCell></TableRow>}
             {!isLoading && rows.map(r => (
               <TableRow key={r.id} className="hover:bg-blue-50/40">
-                <TableCell className="font-medium text-blue-600 underline-offset-2 hover:underline flex items-center gap-1">
+                <TableCell className="font-semibold text-blue-600 underline-offset-2 hover:underline flex items-center gap-1">
                   <Tag className="h-3 w-3 text-gray-400" />
                   <Link href={`/dashboard/inventory/item/${r.id}`}>{r.item}</Link>
                 </TableCell>
-                <TableCell className="tabular-nums text-center">{r.qty}</TableCell>
-                <TableCell className="tabular-nums">
+                <TableCell className="tabular-nums text-center font-medium">{r.qty}</TableCell>
+                <TableCell className="tabular-nums font-medium">
                   <span
                     className="inline-flex items-center justify-center border border-gray-300 rounded-sm bg-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.4)] font-medium tracking-tight"
                     style={{ width: '70px', height: '28px' }}
@@ -249,10 +249,10 @@ export default function InventoryItemSearchPage() {
                   </span>
                 </TableCell>
                 <TableCell className="text-center">{r.tax && <input type="checkbox" checked readOnly className="h-3 w-3" />}</TableCell>
-                <TableCell>{r.category}</TableCell>
-                <TableCell className="font-mono text-xs">{r.customSku}</TableCell>
-                <TableCell className="font-mono text-xs">{r.mfrSku}</TableCell>
-                <TableCell>{r.publish}</TableCell>
+                <TableCell className="font-medium">{r.category}</TableCell>
+                <TableCell className="font-mono text-[12px]">{r.customSku}</TableCell>
+                <TableCell className="font-mono text-[12px]">{r.mfrSku}</TableCell>
+                <TableCell className="font-medium">{r.publish}</TableCell>
               </TableRow>
             ))}
           </TableBody>
